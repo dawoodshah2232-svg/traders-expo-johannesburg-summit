@@ -1,0 +1,55 @@
+name: Deploy to cPanel
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-cpanel
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure SSH
+        env:
+          SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
+          SSH_PASSPHRASE: ${{ secrets.CPANEL_SSH_PASSPHRASE }}
+          HOST: ${{ secrets.CPANEL_HOST }}
+          PORT: ${{ secrets.CPANEL_PORT }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$SSH_KEY" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          # cPanel-generated keys carry a passphrase; strip it on the runner so ssh/rsync run non-interactively
+          if [ -n "$SSH_PASSPHRASE" ]; then
+            ssh-keygen -p -P "$SSH_PASSPHRASE" -N "" -f ~/.ssh/deploy_key > /dev/null
+          fi
+          ssh-keyscan -p "${PORT:-22}" -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Upload site
+        env:
+          HOST: ${{ secrets.CPANEL_HOST }}
+          PORT: ${{ secrets.CPANEL_PORT }}
+          CP_USER: ${{ secrets.CPANEL_USER }}
+          TARGET: ${{ secrets.CPANEL_PATH }}
+        run: |
+          rsync -avz --delete \
+            --exclude '.git/' \
+            --exclude '.github/' \
+            --exclude '.nojekyll' \
+            --exclude 'README.md' \
+            --exclude '.well-known/' \
+            --exclude 'cgi-bin/' \
+            --exclude '.htaccess' \
+            -e "ssh -i ~/.ssh/deploy_key -p ${PORT:-22}" \
+            ./ "$CP_USER@$HOST:$TARGET/"
+
+      - name: Cleanup
+        if: always()
+        run: rm -f ~/.ssh/deploy_key
