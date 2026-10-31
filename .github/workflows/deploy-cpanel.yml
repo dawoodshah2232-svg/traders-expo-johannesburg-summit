@@ -16,6 +16,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Detect project parts
+        id: detect
+        run: |
+          # React frontend once frontend/package.json exists, otherwise the static HTML in the repo root
+          if [ -f frontend/package.json ]; then echo "frontend=true" >> "$GITHUB_OUTPUT"; else echo "frontend=false" >> "$GITHUB_OUTPUT"; fi
+          # Laravel backend once backend/composer.json exists
+          if [ -f backend/composer.json ]; then echo "backend=true" >> "$GITHUB_OUTPUT"; else echo "backend=false" >> "$GITHUB_OUTPUT"; fi
+
       - name: Configure SSH
         env:
           SSH_KEY: ${{ secrets.CPANEL_SSH_KEY }}
@@ -32,23 +40,137 @@ jobs:
           fi
           ssh-keyscan -p "${PORT:-22}" -H "$HOST" >> ~/.ssh/known_hosts 2>/dev/null
 
-      - name: Upload site
+      # ---------- Frontend (React + Vite, JSX) ----------
+
+      - name: Setup Node
+        if: steps.detect.outputs.frontend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build frontend
+        if: steps.detect.outputs.frontend == 'true'
+        working-directory: frontend
+        env:
+          FRONTEND_ENV: ${{ secrets.FRONTEND_ENV }}
+        run: |
+          printf '%s\n' "$FRONTEND_ENV" > .env.production
+          npm ci
+          npm run build
+
+      - name: Upload frontend
         env:
           HOST: ${{ secrets.CPANEL_HOST }}
           PORT: ${{ secrets.CPANEL_PORT }}
           CP_USER: ${{ secrets.CPANEL_USER }}
           TARGET: ${{ secrets.CPANEL_PATH }}
+          IS_REACT: ${{ steps.detect.outputs.frontend }}
         run: |
+          if [ "$IS_REACT" = "true" ]; then SRC=frontend/dist/; else SRC=./; fi
+          # /backend/ is excluded so the Laravel entry point on the server is never deleted by --delete
           rsync -avz --delete \
-            --exclude '.git/' \
-            --exclude '.github/' \
+            --exclude '/.git/' \
+            --exclude '/.github/' \
+            --exclude '/frontend/' \
+            --exclude '/backend/' \
+            --exclude '*.md' \
             --exclude '.nojekyll' \
-            --exclude 'README.md' \
             --exclude '.well-known/' \
             --exclude 'cgi-bin/' \
-            --exclude '.htaccess' \
+            --filter 'P .htaccess' \
+            --filter 'P .user.ini' \
             -e "ssh -i ~/.ssh/deploy_key -p ${PORT:-22}" \
-            ./ "$CP_USER@$HOST:$TARGET/"
+            "$SRC" "$CP_USER@$HOST:$TARGET/"
+
+      # ---------- Backend (Laravel 10, PHP 8.1) ----------
+
+      - name: Setup PHP 8.1
+        if: steps.detect.outputs.backend == 'true'
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer:v2
+          extensions: mbstring, pdo_mysql, bcmath, intl, zip
+
+      - name: Install backend dependencies
+        if: steps.detect.outputs.backend == 'true'
+        working-directory: backend
+        run: composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist
+
+      - name: Upload backend
+        if: steps.detect.outputs.backend == 'true'
+        env:
+          HOST: ${{ secrets.CPANEL_HOST }}
+          PORT: ${{ secrets.CPANEL_PORT }}
+          CP_USER: ${{ secrets.CPANEL_USER }}
+          WEB: ${{ secrets.CPANEL_PATH }}
+          BACKEND_ENV: ${{ secrets.BACKEND_ENV }}
+        run: |
+          if [ -z "$BACKEND_ENV" ]; then
+            echo "::error::BACKEND_ENV secret is required for the backend deploy"
+            exit 1
+          fi
+          SSH="ssh -i $HOME/.ssh/deploy_key -p ${PORT:-22}"
+          $SSH "$CP_USER@$HOST" "mkdir -p '$WEB/backend'"
+          # Whole Laravel app goes to public_html/thetradersexpo.com/backend; the generated root index.php/.htaccess are kept
+          rsync -az --delete \
+            --exclude '/.env' \
+            --exclude '/storage/' \
+            --exclude '/node_modules/' \
+            --exclude '/tests/' \
+            --filter 'P /index.php' \
+            --filter 'P /.htaccess' \
+            --filter 'P /public/storage' \
+            -e "$SSH" \
+            backend/ "$CP_USER@$HOST:$WEB/backend/"
+          printf '%s\n' "$BACKEND_ENV" | $SSH "$CP_USER@$HOST" "cat > '$WEB/backend/.env' && chmod 600 '$WEB/backend/.env'"
+
+      - name: Run Laravel release tasks
+        if: steps.detect.outputs.backend == 'true'
+        env:
+          HOST: ${{ secrets.CPANEL_HOST }}
+          PORT: ${{ secrets.CPANEL_PORT }}
+          CP_USER: ${{ secrets.CPANEL_USER }}
+          WEB: ${{ secrets.CPANEL_PATH }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" "$CP_USER@$HOST" bash -s -- "$WEB/backend" <<'EOF'
+          set -e
+          APP="$1"
+          PHP=/opt/cpanel/ea-php81/root/usr/bin/php
+          cd "$APP"
+          mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
+
+          # Front controller in the folder root so URLs are /backend/api/... (not /backend/public/api/...)
+          sed "s#__DIR__.'/../#__DIR__.'/#g" public/index.php > index.php
+
+          # The app sits inside the web root: block .env, source, vendor and storage; serve only public/ files and index.php
+          cat > .htaccess <<'HT'
+          Options -Indexes
+          <FilesMatch "^\.">
+              Require all denied
+          </FilesMatch>
+          <IfModule mod_rewrite.c>
+              RewriteEngine On
+              RewriteCond %{HTTP:Authorization} .
+              RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+              RewriteRule ^(app|bootstrap|config|database|lang|resources|routes|storage|tests|vendor|node_modules)(/|$) - [F,L]
+              RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|vite\.config\.js)$ - [F,L]
+              RewriteRule ^public/ - [L]
+              RewriteCond __APP__/public/$1 -f
+              RewriteRule ^(.*)$ public/$1 [L]
+              RewriteRule ^ index.php [L]
+          </IfModule>
+          HT
+          sed -i "s#__APP__#$APP#" .htaccess
+
+          $PHP artisan storage:link || true
+          $PHP artisan migrate --force
+          $PHP artisan config:cache
+          $PHP artisan route:cache
+          $PHP artisan view:cache
+          EOF
 
       - name: Cleanup
         if: always()

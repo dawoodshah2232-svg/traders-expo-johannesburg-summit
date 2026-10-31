@@ -6,3 +6,6 @@ Separate comparison build. Do NOT mix with the tradingexpo-africa repo / Africa 
 - Event: 19–20 February 2027, Emperors Palace, Centre Court, 64 Jones Road, Kempton Park, Johannesburg
 - Organiser: ProFX Media FZ-LLC — info@profxmedia.com, +971 58 884 5033
 - Register interest only — no payment is collected on this static preview, and ticket pricing is not confirmed.
+
+## Before you change anything
+Read and follow **[AGENTS.md](AGENTS.md)**. It defines the allowed stack (React JSX frontend + admin, Laravel 10 / PHP 8.1 backend, MySQL), the folder structure, the database, the auto-deploy to cPanel on every push to `main`, and the GitHub secrets.
