@@ -1,5 +1,5 @@
-// Countdown to 19 Feb 2027, 09:00 Africa/Johannesburg (+02:00)
-const target = new Date('2027-02-19T09:00:00+02:00').getTime();
+// Countdown to 18 Feb 2027, 09:00 Africa/Johannesburg (+02:00)
+const target = new Date('2027-02-18T09:00:00+02:00').getTime();
 function tick(){
   const el=document.getElementById('d'); if(!el) return;
   let diff=Math.max(0,target-Date.now());
