@@ -52,14 +52,16 @@ Rules:
 ├── AGENTS.md                         # this file
 ├── README.md
 ├── .github/workflows/deploy-cpanel.yml
-├── index.html, about.html, assets/…  # CURRENT static site (until React replaces it)
 ├── frontend/                         # React + Vite (JSX) — public site + admin panel
 │   ├── public/
-│   │   └── .htaccess                 # SPA fallback (section 5)
+│   │   ├── .htaccess                 # SPA fallback + old *.html → clean URL redirects (section 5)
+│   │   └── assets/img, assets/logos  # images, served as /assets/...
 │   ├── src/
-│   │   ├── pages/                    # public pages
-│   │   ├── admin/                    # admin panel pages/components
-│   │   └── api/                      # API client (uses VITE_API_URL)
+│   │   ├── pages/                    # public pages (one .jsx per page)
+│   │   ├── components/, layouts/     # shared header, footer, forms, countdown
+│   │   ├── admin/                    # admin panel pages/components + auth
+│   │   ├── api/                      # API client (uses VITE_API_URL)
+│   │   └── styles/                   # site.css (the site design) + Tailwind (index.css)
 │   ├── index.html
 │   ├── package.json
 │   └── vite.config.js
@@ -69,7 +71,7 @@ Rules:
     └── .env.example                  # never commit the real .env
 ```
 
-`frontend/` and `backend/` currently contain only a `.gitkeep`. The deploy workflow detects them automatically:
+`backend/` currently contains only a `.gitkeep`. The deploy workflow detects the parts automatically:
 
 | Condition | What is deployed |
 |---|---|
@@ -77,7 +79,12 @@ Rules:
 | `frontend/package.json` exists | `npm run build` → `frontend/dist/` → `public_html/thetradersexpo.com` |
 | `backend/composer.json` exists | Laravel → `public_html/thetradersexpo.com/backend` |
 
-When the React app is ready to replace the static site, delete the old root HTML files and `assets/` in the same PR.
+The old static HTML site has been replaced by the React app in `frontend/`. Do not add HTML pages to the repo root.
+
+### Styling
+- `frontend/src/styles/site.css` is the site design (copied unchanged from the static site). Public pages use its classes (`section`, `wrap`, `card`, `btn btn-pill`, `stitle` …).
+- Tailwind CSS v4 is installed **without preflight**, so it never changes the existing look. Use Tailwind utilities for new UI, especially the admin panel, with the brand colours from `src/styles/index.css` (`bg-brand`, `text-brand-light`, `bg-panel`, `border-line`, `text-muted` …).
+- The admin panel reuses the site header, buttons, cards and form styles so the website and admin look the same.
 
 ---
 

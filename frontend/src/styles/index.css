@@ -1,0 +1,22 @@
+/*
+  Tailwind without preflight, so the site stylesheet keeps the exact look of the original pages.
+  site.css sits in its own layer below utilities, so Tailwind classes can still override it.
+*/
+@layer theme, base, site, components, utilities;
+@import "tailwindcss/theme.css" layer(theme);
+@import "./site.css" layer(site);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/* Brand tokens taken from site.css — use these in new UI (e.g. bg-brand, text-brand-light, bg-panel) */
+@theme {
+  --font-sans: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  --color-brand: #00c853;
+  --color-brand-light: #34e07a;
+  --color-ink: #050d08;
+  --color-head: #04140a;
+  --color-panel: #081a10;
+  --color-panel-2: #0b1f14;
+  --color-line: #1e3a2a;
+  --color-muted: #9fb3a6;
+  --color-text: #e8f0e9;
+}

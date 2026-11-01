@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+  RewriteRule ^backend(/|$) - [L]
+
+  # Old static-site URLs (about.html, index.html …) → new clean URLs
+  RewriteCond %{THE_REQUEST} \s/+index\.html[\s?]
+  RewriteRule ^index\.html$ / [R=301,L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteRule ^([a-z0-9-]+)\.html$ /$1 [R=301,L]
+
+  # React Router: everything that is not a real file or folder goes to index.html
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule . /index.html [L]
+</IfModule>

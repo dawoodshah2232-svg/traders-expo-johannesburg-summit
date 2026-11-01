@@ -1,0 +1,6 @@
+.expo-days{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px}
+.expo-day{border:1px solid rgba(128,128,128,.28);background:rgba(128,128,128,.06);border-radius:16px;padding:16px}
+.expo-day-no{display:inline-block;font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#1d9e57;font-weight:700}
+.expo-day b{display:block;margin-top:6px;font-size:16px}
+.expo-day span:last-child{display:block;margin-top:4px;font-size:13px;opacity:.75}
+@media (max-width:560px){.expo-days{grid-template-columns:1fr}}
