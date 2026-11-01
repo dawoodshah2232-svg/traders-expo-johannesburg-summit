@@ -41,6 +41,7 @@ Rules:
   "require": { "php": "^8.1", "laravel/framework": "^10.0" },
   "config": { "platform": { "php": "8.1.0" } }
   ```
+- Composer 2.9+ refuses packages with security advisories, and four Laravel advisories are only fixed in Laravel 12+. They are listed with reasons under `config.audit.ignore` in `backend/composer.json`. Only add an ID there after checking it does not affect this app, and write the reason.
 - Node is only used on GitHub Actions (and locally) to **build** the frontend. Use Node 20.
 
 ---
@@ -71,7 +72,7 @@ Rules:
     └── .env.example                  # never commit the real .env
 ```
 
-`backend/` currently contains only a `.gitkeep`. The deploy workflow detects the parts automatically:
+The deploy workflow detects the parts automatically:
 
 | Condition | What is deployed |
 |---|---|
@@ -160,24 +161,26 @@ Rules:
 - Public uploaded files: set the `public` disk URL in `config/filesystems.php` to `env('APP_URL').'/public/storage'` (the `storage/` path itself is blocked).
 - The frontend deploy never touches the `/backend` folder on the server.
 
-### Creating the Laravel project (first time)
-```powershell
-composer create-project laravel/laravel:^10.0 backend
-cd backend
-composer require laravel/sanctum
-```
-Then add the `platform` config from section 2 to `composer.json`, and run `composer update` with PHP 8.1.
-
 ### Local development
 ```powershell
 cd backend
 composer install
-copy .env.example .env
+copy .env.example .env       # local MySQL: database thetradersexpo, user root, no password (XAMPP)
 php artisan key:generate
 php artisan migrate
-php artisan serve          # http://127.0.0.1:8000
+php artisan storage:link
+php artisan admin:create you@example.com "Your Name"   # asks for a password
+php artisan serve            # http://127.0.0.1:8000
+php artisan test             # feature tests (in-memory SQLite, never touches MySQL)
 ```
-Use PHP 8.1 locally too, so version problems show up before deploy.
+Use PHP 8.1 locally if you can, so version problems show up before deploy. PHP 8.2 also works because `platform.php` keeps the packages 8.1-compatible.
+
+### Floor plan (booth booking)
+- Public: `GET /api/floorplan` (booked booths, company shown only after approval) and `POST /api/floorplan` (booking + payment proof upload).
+- Admin: `/api/admin/floorplans` (list, show, update/approve/reject, delete, `/{id}/proof` download).
+- Booth numbers, sizes and prices live in `backend/config/floorplan.php`. The API sets the price; the browser never does. Keep `frontend/src/components/floorplan/booths.js` in sync.
+- Payment proofs are stored privately in `storage/app/payment-proofs` and are only served to admins. Company logos go to the public disk.
+- Payment account details shown in the booking popup live in `frontend/src/config/payments.js`.
 
 ### API and admin auth
 - All routes go in `routes/api.php` → live at `https://thetradersexpo.com/backend/api/...`.
@@ -220,7 +223,8 @@ Never change `APP_KEY` after going live (it logs everyone out and breaks encrypt
 Every deploy runs `php artisan migrate --force`. That means:
 - Never edit a migration that has already been deployed. Create a new one.
 - Never add `migrate:fresh`, `migrate:reset`, `migrate:rollback` or `db:wipe` to the workflow. They delete live data.
-- Seeders do **not** run automatically. Create the first admin user with a one-off seeder or `php artisan tinker` over SSH.
+- Seeders do **not** run automatically. Create the first admin user over SSH:
+  `/opt/cpanel/ea-php81/root/usr/bin/php artisan admin:create admin@example.com "Admin Name"` (it asks for the password).
 
 ### PHP on the server
 On cPanel the plain `php` command may not be 8.1. Always use:

@@ -17,3 +17,6 @@ copy .env.example .env.local   # VITE_API_URL for the local Laravel API
 npm run dev                    # http://localhost:5173  (admin: /admin)
 npm run build                  # → frontend/dist
 ```
+
+## Backend (API)
+Laravel 10 / PHP 8.1 in [`backend/`](backend/). Local setup and the floor plan API are described in [AGENTS.md](AGENTS.md#local-development).

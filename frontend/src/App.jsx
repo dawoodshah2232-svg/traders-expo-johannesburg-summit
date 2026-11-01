@@ -4,6 +4,7 @@ import { AuthProvider, RequireAdmin } from './admin/auth'
 import AdminLayout from './admin/AdminLayout'
 import AdminLogin from './admin/AdminLogin'
 import Dashboard from './admin/Dashboard'
+import FloorplanBookings from './admin/FloorplanBookings'
 import About from './pages/About'
 import Agenda from './pages/Agenda'
 import Awards from './pages/Awards'
@@ -67,6 +68,7 @@ function AdminRoutes() {
       <Route element={<RequireAdmin />}>
         <Route element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="floorplans" element={<FloorplanBookings />} />
           <Route path="*" element={<Dashboard />} />
         </Route>
       </Route>

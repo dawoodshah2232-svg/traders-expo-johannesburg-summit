@@ -5,6 +5,7 @@ import { useAuth } from './auth'
 // Sections are listed here as they get built; `ready: false` shows them as "soon"
 export const ADMIN_SECTIONS = [
   { to: '/admin', label: 'Dashboard', ready: true },
+  { to: '/admin/floorplans', label: 'Floor plan bookings', ready: true },
   { to: '/admin/registrations', label: 'Registrations' },
   { to: '/admin/speakers', label: 'Speakers' },
   { to: '/admin/sponsors', label: 'Sponsors' },

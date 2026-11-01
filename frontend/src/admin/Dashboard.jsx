@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import { useAuth } from './auth'
 import { ADMIN_SECTIONS } from './AdminLayout'
 import usePageMeta from '../hooks/usePageMeta'
@@ -16,6 +17,10 @@ export default function Dashboard() {
       </p>
 
       <div className="grid3 mt-8">
+        <Link to="/admin/floorplans" className="card block !text-white hover:!border-brand">
+          <h3>Floor plan bookings</h3>
+          <p className="text-muted">Review booth reservations, check payment proofs and approve exhibitors.</p>
+        </Link>
         {ADMIN_SECTIONS.filter(s => !s.ready).map(s => (
           <div key={s.to} className="card">
             <h3>{s.label}</h3>
