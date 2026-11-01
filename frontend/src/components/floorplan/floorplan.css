@@ -151,3 +151,36 @@
 .swal2-toast-container-high-z { z-index: 10001 !important; }
 .swal2-container { z-index: 10000; }
 }
+
+/* Intro above the plan (tab pill, eyebrow, title) — ProFX floor plan header, on the dark site */
+@layer components {
+  .fp-intro { text-align: center; max-width: 1180px; margin: 0 auto 32px; padding: 0 16px; }
+  .fp-tabs {
+    display: inline-flex;
+    gap: 4px;
+    padding: 5px;
+    border-radius: 50px;
+    background: rgba(255, 255, 255, .06);
+    border: 1px solid rgba(255, 255, 255, .12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, .25);
+    margin-bottom: 28px;
+  }
+  .fp-tab {
+    padding: 10px 28px;
+    border-radius: 50px;
+    border: 0;
+    cursor: pointer;
+    font: inherit;
+    font-weight: 700;
+    font-size: 14px;
+    letter-spacing: .3px;
+    color: #cbd5d0;
+    background: transparent;
+    transition: all .25s ease;
+  }
+  .fp-tab.on { background: linear-gradient(135deg, #c9a227 0%, #a07d1a 100%); color: #fff; box-shadow: 0 2px 12px rgba(160, 125, 26, .4); }
+  .fp-eyebrow { margin: 0 0 4px; color: #c9a227; font-size: 17px; }
+  .fp-title { margin: 0 0 6px; font-size: clamp(28px, 4.6vw, 48px); line-height: 1.15; font-weight: 800; text-transform: uppercase; color: #fff; }
+  .fp-title span { color: #c9a227; }
+  .fp-lead { margin: 0 auto; max-width: 900px; color: #9fb3a6; font-size: 17px; }
+}

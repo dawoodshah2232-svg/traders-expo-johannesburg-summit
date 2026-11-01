@@ -144,6 +144,9 @@ jobs:
 
           # Front controller in the folder root so URLs are /backend/api/... (not /backend/public/api/...)
           sed "s#__DIR__.'/../#__DIR__.'/#g" public/index.php > index.php
+          # Tell Laravel it lives at /backend; this server's PHP doesn't report the real script path after the rewrite,
+          # so without this every route is seen as "backend/api/..." and returns 404.
+          sed -i '1a $_SERVER["SCRIPT_NAME"] = $_SERVER["PHP_SELF"] = "/backend/index.php"; $_SERVER["SCRIPT_FILENAME"] = __FILE__;' index.php
 
           # The app sits inside the web root: block .env, source, vendor and storage; serve only public/ files and index.php
           cat > .htaccess <<'HT'

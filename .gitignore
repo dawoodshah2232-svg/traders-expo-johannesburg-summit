@@ -7,3 +7,4 @@ backend/vendor/
 backend/storage/*.key
 .DS_Store
 Thumbs.db
+frontend/.vite/

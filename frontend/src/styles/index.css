@@ -5,6 +5,7 @@
 @layer theme, base, site, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "./site.css" layer(site);
+@import "./modern.css" layer(site);
 @import "tailwindcss/utilities.css" layer(utilities);
 
 /* Brand tokens taken from site.css — use these in new UI (e.g. bg-brand, text-brand-light, bg-panel) */
