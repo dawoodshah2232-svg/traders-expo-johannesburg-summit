@@ -138,7 +138,7 @@ jobs:
           ssh -i ~/.ssh/deploy_key -p "${PORT:-22}" "$CP_USER@$HOST" bash -s -- "$WEB/backend" <<'EOF'
           set -e
           APP="$1"
-          PHP=/opt/cpanel/ea-php81/root/usr/bin/php
+          PHP=/opt/alt/php81/usr/bin/php
           cd "$APP"
           mkdir -p storage/app/public storage/framework/cache storage/framework/sessions storage/framework/views storage/logs bootstrap/cache
 
@@ -160,6 +160,7 @@ jobs:
               RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
               RewriteRule ^(app|bootstrap|config|database|lang|resources|routes|storage|tests|vendor|node_modules)(/|$) - [F,L]
               RewriteRule ^(artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|vite\.config\.js)$ - [F,L]
+              RewriteRule ^index\.php$ - [L]
               RewriteRule ^public/ - [L]
               RewriteCond __APP__/public/$1 -f
               RewriteRule ^(.*)$ public/$1 [L]

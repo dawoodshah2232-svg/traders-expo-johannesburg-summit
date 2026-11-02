@@ -224,12 +224,12 @@ Every deploy runs `php artisan migrate --force`. That means:
 - Never edit a migration that has already been deployed. Create a new one.
 - Never add `migrate:fresh`, `migrate:reset`, `migrate:rollback` or `db:wipe` to the workflow. They delete live data.
 - Seeders do **not** run automatically. Create the first admin user over SSH:
-  `/opt/cpanel/ea-php81/root/usr/bin/php artisan admin:create admin@example.com "Admin Name"` (it asks for the password).
+  `/opt/alt/php81/usr/bin/php artisan admin:create admin@example.com "Admin Name"` (it asks for the password).
 
 ### PHP on the server
 On cPanel the plain `php` command may not be 8.1. Always use:
 ```bash
-/opt/cpanel/ea-php81/root/usr/bin/php artisan ...
+/opt/alt/php81/usr/bin/php artisan ...
 ```
 Also set **cPanel → MultiPHP Manager → thetradersexpo.com → PHP 8.1** (Kailash).
 
